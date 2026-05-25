@@ -74,23 +74,23 @@ def gusfield(graph: dict) -> tuple[dict, dict]:
     for i in range(1, n):
         j = t[i]  # Current parent index of node i.
 
-        # --- Step 1: Max-flow between nodes[i] and its current parent ---
+        # Step 1: Max-flow between nodes[i] and its current parent
         flow_val, _, residual = edmonds_karp(graph, nodes[i], nodes[j])
         w[i] = flow_val
 
-        # --- Step 2: Source-side of the minimum i-j cut ---
+        # Step 2: Source-side of the minimum i-j cut
         # S contains nodes[i] and every node that can still reach nodes[i]'s
         # side after the flow saturates all min-cut edges.
         S = _source_side(residual, nodes[i])
 
-        # --- Step 3: Redirect later nodes that share parent j but lie in S ---
+        # Step 3: Redirect later nodes that share parent j but lie in S
         # If node k > i currently points to j and is on i's side of the cut,
         # it is "closer" to i than to j, so redirect it.
         for k in range(i + 1, n):
             if t[k] == j and nodes[k] in S:
                 t[k] = i
 
-        # --- Step 4: Maintain the Gomory-Hu tree invariant ---
+        # Step 4: Maintain the Gomory-Hu tree invariant
         # If j's own parent (the grandparent of i) lies in S, the arc between
         # i and j must be swapped so the tree correctly encodes all pairwise
         # min cuts. This is the key step that distinguishes Gusfield's
