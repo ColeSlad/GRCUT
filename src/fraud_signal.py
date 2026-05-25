@@ -1,69 +1,121 @@
-"""Extract fraud suspicion scores from a Gomory-Hu tree."""
+"""Extract fraud suspicion scores and evaluate detection performance."""
+
+import numpy as np
 
 
-def suspicion_scores(
-    parent_dict: dict,
-    weight_dict: dict,
-    graph: dict,
-) -> dict[object, float]:
+def compute_suspicion_scores(tree: dict, labels: dict) -> dict:
     """
-    Derive a per-node suspicion score from the Gomory-Hu tree structure.
+    For each node in the Gomory-Hu tree, compute a suspicion score defined
+    as the minimum edge weight incident to that node in the tree.
 
-    Nodes that are weakly connected to the rest of the graph (low min-cut
-    values to their nearest cut boundary) are more suspicious: they can be
-    isolated from the honest transaction cluster by removing few edges.
+    Low weight = weakly connected to the rest of the graph = suspicious.
+    A node that can be cut away from the honest cluster by removing a single
+    low-weight tree edge is a strong candidate for fraud ring membership.
 
-    The score is defined as the reciprocal of the minimum edge weight on the
-    path from a node to the root of the Gomory-Hu tree.  A small min-cut
-    weight → high score → high suspicion.
+    Implemented in pure Python — no external libraries.
 
     Args:
-        parent_dict: {node: parent} output from gusfield().
-        weight_dict: {node: weight} output from gusfield().
-        graph:       Original graph dict (used to identify all nodes).
+        tree:   Parent dict from gusfield() — {node: parent}.
+        labels: Edge weight dict from gusfield() — {node: cut_value_to_parent}.
+                (Not to be confused with ground-truth fraud labels.)
 
     Returns:
-        {node: score} where score ∈ (0, ∞).  Higher means more suspicious.
+        {node: suspicion_score} where a lower score means more suspicious.
+        Covers every node that appears in the tree (root + all non-root nodes).
     """
-    # TODO: Implement score extraction.
-    #
-    # Suggested steps:
-    # 1. Reconstruct the tree as an undirected adjacency list from parent_dict
-    #    and weight_dict.
-    # 2. For each node, walk the path to the root and track the minimum edge
-    #    weight encountered (this is the min cut separating that node from the
-    #    root cluster).
-    # 3. Return score = 1 / min_weight  (or 1 / (min_weight + ε) to avoid /0).
-    # 4. Optionally normalise scores to [0, 1] using min-max scaling.
-    raise NotImplementedError("suspicion_scores not yet implemented.")
+    # Build a mapping from each node to all incident tree edge weights.
+    # Each entry in `tree` is one edge: node --weight--> parent.
+    # That edge contributes its weight to BOTH endpoints.
+    incident: dict = {}
+
+    for node, parent in tree.items():
+        weight = labels[node]  # weight of the edge node → parent
+
+        if node not in incident:
+            incident[node] = []
+        incident[node].append(weight)
+
+        if parent not in incident:
+            incident[parent] = []
+        incident[parent].append(weight)
+
+    # Suspicion score = minimum incident edge weight for each node.
+    # Leaf nodes have exactly one incident edge; internal nodes and the root
+    # have multiple — we take the weakest link in every case.
+    return {node: min(weights) for node, weights in incident.items()}
 
 
-def cluster_by_cut_threshold(
-    parent_dict: dict,
-    weight_dict: dict,
-    threshold: float,
-) -> list[set]:
+def flag_suspicious_nodes(
+    scores: dict,
+    percentile_threshold: float = 10.0,
+) -> set:
     """
-    Partition nodes into clusters by removing Gomory-Hu tree edges below
-    a given min-cut threshold.
+    Flag nodes whose suspicion score falls at or below the given percentile.
 
-    Edges with weight < threshold correspond to weak boundaries in the graph;
-    removing them splits the tree into connected components that become the
-    fraud clusters.
+    Because a low score means weak connectivity (= more suspicious), flagging
+    the bottom N% of scores identifies the most isolated nodes in the graph.
 
     Args:
-        parent_dict: {node: parent} output from gusfield().
-        weight_dict: {node: weight} output from gusfield().
-        threshold:   Remove tree edges with weight strictly below this value.
+        scores:               {node: suspicion_score} from compute_suspicion_scores().
+        percentile_threshold: Nodes at or below this percentile are flagged.
+                              Default 10.0 = bottom 10%.
 
     Returns:
-        List of node sets, one per cluster.
+        Set of flagged node IDs.
     """
-    # TODO: Implement threshold-based clustering.
-    #
-    # Suggested steps:
-    # 1. Build an adjacency list from parent_dict / weight_dict, omitting edges
-    #    whose weight < threshold.
-    # 2. Run BFS/DFS to find connected components in the pruned tree.
-    # 3. Return each component as a set of nodes.
-    raise NotImplementedError("cluster_by_cut_threshold not yet implemented.")
+    if not scores:
+        return set()
+
+    cutoff = float(np.percentile(list(scores.values()), percentile_threshold))
+    return {node for node, score in scores.items() if score <= cutoff}
+
+
+def evaluate(flagged: set, fraud_labels: dict) -> dict:
+    """
+    Compare flagged nodes against ground truth fraud labels.
+
+    Only nodes that appear in fraud_labels are included in the evaluation —
+    unlabelled nodes in `flagged` are silently ignored so that nodes outside
+    the labelled dataset do not inflate false-positive counts.
+
+    Args:
+        flagged:      Set of node IDs flagged as suspicious.
+        fraud_labels: {node: 0_or_1} ground-truth labels.
+
+    Returns:
+        Dict with keys:
+            precision, recall, f1          — float metrics (rounded to 4dp)
+            true_positives                 — flagged and actually fraudulent
+            false_positives                — flagged but not fraudulent
+            false_negatives                — fraudulent but not flagged
+            total_flagged                  — len(flagged ∩ labeled)
+            total_fraudulent               — total fraud nodes in labeled set
+    """
+    labeled = set(fraud_labels.keys())
+    actual_fraud = {n for n in labeled if fraud_labels[n] == 1}
+
+    # Restrict to nodes we have ground truth for.
+    flagged_labeled = flagged & labeled
+
+    tp = len(flagged_labeled & actual_fraud)
+    fp = len(flagged_labeled - actual_fraud)
+    fn = len(actual_fraud - flagged_labeled)
+
+    precision = tp / (tp + fp) if (tp + fp) > 0 else 0.0
+    recall = tp / (tp + fn) if (tp + fn) > 0 else 0.0
+    f1 = (
+        2 * precision * recall / (precision + recall)
+        if (precision + recall) > 0
+        else 0.0
+    )
+
+    return {
+        "precision": round(precision, 4),
+        "recall": round(recall, 4),
+        "f1": round(f1, 4),
+        "true_positives": tp,
+        "false_positives": fp,
+        "false_negatives": fn,
+        "total_flagged": len(flagged_labeled),
+        "total_fraudulent": len(actual_fraud),
+    }
