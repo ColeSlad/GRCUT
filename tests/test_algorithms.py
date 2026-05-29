@@ -273,6 +273,86 @@ class TestGusfield:
         root = nodes[0]
         assert all(n in parent for n in nodes if n != root)
 
+    def test_bottleneck_six_node(self):
+        """Two weight-4 triangles joined by a single weight-1 bridge.
+
+        Graph layout:
+            0 - 1 - 2 - 3 - 4
+            |       |       |
+            +---2---+   5---+   (triangle edges weight 4; bridge 2-3 weight 1)
+
+        Concretely:
+            Triangle A: 0-1-2-0, all edges weight 4.
+            Triangle B: 3-4-5-3, all edges weight 4.
+            Bridge:     2-3, weight 1.
+
+        Expected min-cuts:
+            Within triangle A or B: 8  (two edge-disjoint paths of weight 4).
+            Across the bridge:       1  (only the single bridge edge can be cut).
+
+        The Gomory-Hu tree must encode both tiers correctly; specifically the
+        bridge edge must appear in the tree with weight 1.
+        """
+        graph = {
+            0: {1: 4, 2: 4},
+            1: {0: 4, 2: 4},
+            2: {0: 4, 1: 4, 3: 1},  # node 2 connects the two triangles
+            3: {2: 1, 4: 4, 5: 4},
+            4: {3: 4, 5: 4},
+            5: {3: 4, 4: 4},
+        }
+        parent, weights = gusfield(graph)
+        nodes = _all_nodes(graph)
+
+        for u in nodes:
+            for v in nodes:
+                if u == v:
+                    continue
+                tree_cut = _min_cut_from_tree(parent, weights, u, v)
+                actual_cut, _, _ = edmonds_karp(graph, u, v)
+                assert abs(tree_cut - actual_cut) < 1e-9, (
+                    f"({u},{v}): tree={tree_cut}, actual={actual_cut}"
+                )
+
+        # Explicitly verify the bottleneck: any cross-cluster pair has cut = 1.
+        for u in [0, 1, 2]:
+            for v in [3, 4, 5]:
+                actual_cut, _, _ = edmonds_karp(graph, u, v)
+                assert abs(actual_cut - 1.0) < 1e-9, (
+                    f"Cross-bridge min-cut ({u},{v}) should be 1, got {actual_cut}"
+                )
+
+    def test_uniform_weights_k4(self):
+        """K4 with all edge weights equal to 3.
+
+        For K_n with uniform edge weight w, the min-cut between any pair of
+        nodes equals (n-1) * w, because isolating one node requires cutting
+        all n-1 edges incident to it.
+
+        For K4 with w=3: expected all-pairs min-cut = 3 * 3 = 9.
+
+        This test verifies that Gusfield produces a valid tree even when the
+        flow network has no single bottleneck — every possible spanning tree
+        with all edge weights 9 is a correct answer.
+        """
+        edge_weight = 3
+        n = 4
+        graph = {i: {j: edge_weight for j in range(n) if j != i} for i in range(n)}
+        parent, weights = gusfield(graph)
+        nodes = _all_nodes(graph)
+
+        expected_cut = (n - 1) * edge_weight  # = 9
+
+        for u in nodes:
+            for v in nodes:
+                if u == v:
+                    continue
+                tree_cut = _min_cut_from_tree(parent, weights, u, v)
+                assert abs(tree_cut - expected_cut) < 1e-9, (
+                    f"K4 uniform: expected cut {expected_cut} for ({u},{v}), "
+                    f"got {tree_cut}"
+                )
+
 
 # ---------------------------------------------------------------------------
 # Gusfield vs. NetworkX validation
