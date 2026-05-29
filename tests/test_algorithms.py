@@ -2,6 +2,7 @@
 
 import sys
 import os
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pytest
@@ -10,10 +11,10 @@ import networkx as nx
 from src.max_flow import edmonds_karp
 from src.gomory_hu import gusfield
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _min_cut_from_tree(parent_dict: dict, weight_dict: dict, u, v) -> float:
     """
@@ -31,6 +32,7 @@ def _min_cut_from_tree(parent_dict: dict, weight_dict: dict, u, v) -> float:
 
     # BFS tracking minimum edge weight seen so far on the path from u.
     from collections import deque
+
     queue = deque([(u, float("inf"))])
     visited = {u}
     while queue:
@@ -72,6 +74,7 @@ def _build_nx_graph(graph: dict) -> nx.Graph:
 # ---------------------------------------------------------------------------
 # Edmonds-Karp tests
 # ---------------------------------------------------------------------------
+
 
 class TestEdmondsKarp:
     def test_trivial_two_nodes(self):
@@ -128,9 +131,9 @@ class TestEdmondsKarp:
         for node in [1, 2]:
             inflow = sum(flow.get(u, {}).get(node, 0) for u in graph)
             outflow = sum(flow.get(node, {}).get(v, 0) for v in graph.get(node, {}))
-            assert abs(inflow - outflow) < 1e-9, (
-                f"Flow not conserved at node {node}: in={inflow}, out={outflow}"
-            )
+            assert (
+                abs(inflow - outflow) < 1e-9
+            ), f"Flow not conserved at node {node}: in={inflow}, out={outflow}"
 
     def test_residual_reachability(self):
         """After max flow, source side of min cut should not contain sink."""
@@ -141,6 +144,7 @@ class TestEdmondsKarp:
         }
         _, _, residual = edmonds_karp(graph, 0, 1)
         from collections import deque
+
         visited = {0}
         queue = deque([0])
         while queue:
@@ -167,14 +171,15 @@ class TestEdmondsKarp:
                     continue
                 our_val, _, _ = edmonds_karp(graph, s, t)
                 nx_val = nx.maximum_flow_value(G, s, t, capacity="capacity")
-                assert abs(our_val - nx_val) < 1e-9, (
-                    f"Flow mismatch ({s},{t}): ours={our_val}, nx={nx_val}"
-                )
+                assert (
+                    abs(our_val - nx_val) < 1e-9
+                ), f"Flow mismatch ({s},{t}): ours={our_val}, nx={nx_val}"
 
 
 # ---------------------------------------------------------------------------
 # Gusfield tests
 # ---------------------------------------------------------------------------
+
 
 class TestGusfield:
     def test_trivial_two_nodes(self):
@@ -203,9 +208,9 @@ class TestGusfield:
                     continue
                 tree_cut = _min_cut_from_tree(parent, weights, u, v)
                 actual_cut, _, _ = edmonds_karp(graph, u, v)
-                assert abs(tree_cut - actual_cut) < 1e-9, (
-                    f"Tree min-cut ({u},{v}) = {tree_cut}, actual = {actual_cut}"
-                )
+                assert (
+                    abs(tree_cut - actual_cut) < 1e-9
+                ), f"Tree min-cut ({u},{v}) = {tree_cut}, actual = {actual_cut}"
 
     def test_path_graph(self):
         """Path 0-1-2-3, unit caps: all min-cuts = 1."""
@@ -249,9 +254,9 @@ class TestGusfield:
                     continue
                 tree_cut = _min_cut_from_tree(parent, weights, u, v)
                 actual_cut, _, _ = edmonds_karp(graph, u, v)
-                assert abs(tree_cut - actual_cut) < 1e-9, (
-                    f"({u},{v}): tree={tree_cut}, actual={actual_cut}"
-                )
+                assert (
+                    abs(tree_cut - actual_cut) < 1e-9
+                ), f"({u},{v}): tree={tree_cut}, actual={actual_cut}"
 
     def test_spanning_tree_structure(self):
         """Output tree must have exactly n-1 edges and include all nodes."""
@@ -273,6 +278,7 @@ class TestGusfield:
 # Gusfield vs. NetworkX validation
 # ---------------------------------------------------------------------------
 
+
 class TestGisfieldVsNetworkX:
     """Compare our Gusfield tree against NetworkX's gomory_hu_tree.
 
@@ -293,9 +299,9 @@ class TestGisfieldVsNetworkX:
                     continue
                 our_cut = _min_cut_from_tree(parent, weights, u, v)
                 nx_cut = _min_cut_from_nx_tree(T_nx, u, v)
-                assert abs(our_cut - nx_cut) < 1e-9, (
-                    f"All-pairs mismatch ({u},{v}): ours={our_cut}, nx={nx_cut}"
-                )
+                assert (
+                    abs(our_cut - nx_cut) < 1e-9
+                ), f"All-pairs mismatch ({u},{v}): ours={our_cut}, nx={nx_cut}"
 
     def test_triangle(self):
         graph = {

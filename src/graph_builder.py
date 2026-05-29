@@ -5,14 +5,15 @@ from collections import defaultdict, deque
 
 # Email domains that are too common to be meaningful signals — pairs of cards
 # that only share one of these are almost certainly unrelated.
-_GENERIC_EMAIL_DOMAINS = frozenset({
-    "gmail.com", "yahoo.com", "hotmail.com", "anonymous.com"
-})
+_GENERIC_EMAIL_DOMAINS = frozenset(
+    {"gmail.com", "yahoo.com", "hotmail.com", "anonymous.com"}
+)
 
 
 # ---------------------------------------------------------------------------
 # Internal helpers
 # ---------------------------------------------------------------------------
+
 
 def _accumulate_edges(groups, weight: int, edge_weights: defaultdict) -> None:
     """
@@ -39,6 +40,7 @@ def _accumulate_edges(groups, weight: int, edge_weights: defaultdict) -> None:
 # ---------------------------------------------------------------------------
 # Public API
 # ---------------------------------------------------------------------------
+
 
 def build_transaction_graph(
     transaction_path: str,
@@ -93,9 +95,7 @@ def build_transaction_graph(
     # ------------------------------------------------------------------
     # A card is fraudulent if it was involved in at least one fraud transaction.
     # groupby.max() gives 1 whenever any row for that card has isFraud == 1.
-    fraud_labels: dict = (
-        df.groupby("card1")["isFraud"].max().astype(int).to_dict()
-    )
+    fraud_labels: dict = df.groupby("card1")["isFraud"].max().astype(int).to_dict()
 
     # ------------------------------------------------------------------
     # 3. Accumulate edge weights across attribute types
@@ -111,10 +111,12 @@ def build_transaction_graph(
     # --- Attribute 2: (addr1, addr2) billing-address pair (weight +2) ---
     # Both columns must be present; a partial address is not meaningful.
     addr_df = df.dropna(subset=["addr1", "addr2"]).copy()
-    addr_df["addr_combo"] = list(zip(
-        addr_df["addr1"].astype(int),
-        addr_df["addr2"].astype(int),
-    ))
+    addr_df["addr_combo"] = list(
+        zip(
+            addr_df["addr1"].astype(int),
+            addr_df["addr2"].astype(int),
+        )
+    )
     addr_groups = addr_df.groupby("addr_combo")["card1"].apply(list)
     _accumulate_edges(addr_groups, weight=2, edge_weights=edge_weights)
 
@@ -125,10 +127,7 @@ def build_transaction_graph(
 
     # Step 2: drop domains shared by fewer than 2 distinct cards — a domain
     # with only one card creates no edges and adds noise.
-    domain_card_counts = (
-        email_df.groupby("P_emaildomain")["card1"]
-        .nunique()
-    )
+    domain_card_counts = email_df.groupby("P_emaildomain")["card1"].nunique()
     valid_domains = domain_card_counts[domain_card_counts >= 2].index
     email_df = email_df[email_df["P_emaildomain"].isin(valid_domains)]
 
@@ -140,9 +139,7 @@ def build_transaction_graph(
     # ------------------------------------------------------------------
     # Keep only edges strong enough to be meaningful.  This removes pairs
     # that share only a single weak attribute (e.g. one obscure email domain).
-    edge_weights = {
-        pair: w for pair, w in edge_weights.items() if w >= min_edge_weight
-    }
+    edge_weights = {pair: w for pair, w in edge_weights.items() if w >= min_edge_weight}
 
     # ------------------------------------------------------------------
     # 5. Build adjacency dict (undirected — both directions)
@@ -232,12 +229,7 @@ if __name__ == "__main__":
     print(f"Average degree:           {avg_degree:.2f}")
 
     # Collect all undirected edges (u < v to avoid duplicates).
-    all_edges = [
-        (u, v, w)
-        for u, nbrs in g.items()
-        for v, w in nbrs.items()
-        if u < v
-    ]
+    all_edges = [(u, v, w) for u, nbrs in g.items() for v, w in nbrs.items() if u < v]
     all_edges.sort(key=lambda x: x[2], reverse=True)
 
     print("\nTop 10 highest-weight edges:")

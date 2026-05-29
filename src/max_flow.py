@@ -76,13 +76,15 @@ def edmonds_karp(graph: dict, source, sink) -> tuple[float, dict, dict]:
         v = sink
         while v != source:
             u = parent[v]
-            residual[u][v] -= path_flow          # Consume forward capacity.
-            residual[v][u] = residual[v].get(u, 0) + path_flow  # Open backward capacity.
+            residual[u][v] -= path_flow  # Consume forward capacity.
+            residual[v][u] = (
+                residual[v].get(u, 0) + path_flow
+            )  # Open backward capacity.
             v = u
 
         total_flow += path_flow
 
-    # Reconstruct net flow on original edges 
+    # Reconstruct net flow on original edges
     # flow[u][v] = original_capacity(u,v) − remaining_residual(u,v)
     # This gives the net flow pushed from u to v on that edge.
     flow: dict = {}

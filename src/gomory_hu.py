@@ -96,9 +96,9 @@ def gusfield(graph: dict) -> tuple[dict, dict]:
         # min cuts. This is the key step that distinguishes Gusfield's
         # construction from a naive star-based cut tree.
         if nodes[t[j]] in S:
-            t[i] = t[j]      # i adopts j's former parent.
-            t[j] = i         # j's new parent is i.
-            w[i] = w[j]      # i takes j's former edge weight.
+            t[i] = t[j]  # i adopts j's former parent.
+            t[j] = i  # j's new parent is i.
+            w[i] = w[j]  # i takes j's former edge weight.
             w[j] = flow_val  # j takes the freshly computed flow value.
 
     parent_dict = {nodes[i]: nodes[t[i]] for i in range(1, n)}

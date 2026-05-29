@@ -10,10 +10,12 @@ def _score_to_hex(score: float, min_s: float, max_s: float) -> str:
     Low score (most suspicious) → red (#ff0000).
     High score (least suspicious) → green (#00ff00).
     """
+    # Fall back to the midpoint of the gradient when all scores are identical.
     t = (score - min_s) / (max_s - min_s) if max_s != min_s else 0.5
     t = max(0.0, min(1.0, t))
-    r = int(255 * (1.0 - t))
-    g = int(255 * t)
+    max_channel = 255  # maximum value for a single RGB channel
+    r = int(max_channel * (1.0 - t))
+    g = int(max_channel * t)
     return f"#{r:02x}{g:02x}00"
 
 
@@ -32,11 +34,17 @@ def visualize_graph(graph: dict, output_path: str = "graph.html") -> None:
 
     os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok=True)
 
-    net = Network(height="800px", width="100%", notebook=False, bgcolor="#1a1a2e",
-                  font_color="white")
+    # Dark navy background (#1a1a2e) reduces eye strain for dense graphs.
+    net = Network(
+        height="800px",  # fixed canvas height; width fills the browser tab
+        width="100%",
+        notebook=False,
+        bgcolor="#1a1a2e",
+        font_color="white",
+    )
     net.barnes_hut()
 
-    # Add nodes sized by degree.
+    # Add nodes sized by degree (4 px per connection unit, minimum 8 px).
     for node, neighbors in graph.items():
         degree = len(neighbors)
         net.add_node(
@@ -103,14 +111,20 @@ def visualize_tree(
     min_s = min(scores.values()) if scores else 0.0
     max_s = max(scores.values()) if scores else 1.0
 
-    net = Network(height="800px", width="100%", notebook=False, bgcolor="#1a1a2e",
-                  font_color="white")
+    # Dark navy background (#1a1a2e) reduces eye strain for dense graphs.
+    net = Network(
+        height="800px",  # fixed canvas height; width fills the browser tab
+        width="100%",
+        notebook=False,
+        bgcolor="#1a1a2e",
+        font_color="white",
+    )
     net.barnes_hut()
 
     for node in all_nodes:
         score = scores.get(node, 0.0)
         is_fraud = fraud_labels.get(node, 0) == 1
-        d = degree.get(node, 0)
+        tree_deg = degree.get(node, 0)
         fill = _score_to_hex(score, min_s, max_s)
         # Black border flags ground-truth fraud so it stands out against the
         # colour gradient (which is our model's prediction, not the label).
@@ -119,7 +133,7 @@ def visualize_tree(
             f"Card: {node}<br>"
             f"Score: {score:.2f}<br>"
             f"Fraud: {'Yes ✗' if is_fraud else 'No'}<br>"
-            f"Tree degree: {d}"
+            f"Tree degree: {tree_deg}"
         )
         net.add_node(
             node,
@@ -130,8 +144,8 @@ def visualize_tree(
                 "border": border,
                 "highlight": {"background": fill, "border": "#ffffff"},
             },
-            size=max(10, 8 * d),
-            borderWidth=3 if is_fraud else 1,
+            size=max(10, 8 * tree_deg),  # 8 px per tree-degree unit, minimum 10 px
+            borderWidth=3 if is_fraud else 1,  # thick border highlights confirmed fraud
         )
 
     for node, parent in tree.items():
