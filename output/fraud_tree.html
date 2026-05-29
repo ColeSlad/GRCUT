@@ -1,0 +1,163 @@
+<html>
+    <head>
+        <meta charset="utf-8">
+        
+            <script src="lib/bindings/utils.js"></script>
+            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.2/dist/dist/vis-network.min.css" integrity="sha512-WgxfT5LWjfszlPHXRmBWHkV2eceiWTOBvrKCNbdgDYTHrT2AeLCGbF4sZlZw3UMN3WtL0tGUoIAKsu8mllg/XA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.2/dist/vis-network.min.js" integrity="sha512-LnvoEWDFrqGHlHmDD2101OrLcbsfkrzoSpvtSQtxK3RMnRV0eOkhhBN2dXHKRrUU8p2DGRTk35n4O8nWSVe1mQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+            
+        
+<center>
+<h1></h1>
+</center>
+
+<!-- <link rel="stylesheet" href="../node_modules/vis/dist/vis.min.css" type="text/css" />
+<script type="text/javascript" src="../node_modules/vis/dist/vis.js"> </script>-->
+        <link
+          href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/css/bootstrap.min.css"
+          rel="stylesheet"
+          integrity="sha384-eOJMYsd53ii+scO/bJGFsiCZc+5NDVN2yr8+0RDqr0Ql0h+rP48ckxlpbzKgwra6"
+          crossorigin="anonymous"
+        />
+        <script
+          src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.bundle.min.js"
+          integrity="sha384-JEW9xMcG8R+pH31jmWH6WWP0WintQrMb4s7ZOdauHnUtxwoG2vI5DkLtS3qm9Ekf"
+          crossorigin="anonymous"
+        ></script>
+
+
+        <center>
+          <h1></h1>
+        </center>
+        <style type="text/css">
+
+             #mynetwork {
+                 width: 100%;
+                 height: 800px;
+                 background-color: #1a1a2e;
+                 border: 1px solid lightgray;
+                 position: relative;
+                 float: left;
+             }
+
+             
+
+             
+
+             
+        </style>
+    </head>
+
+
+    <body>
+        <div class="card" style="width: 100%">
+            
+            
+            <div id="mynetwork" class="card-body"></div>
+        </div>
+
+        
+        
+
+        <script type="text/javascript">
+
+              // initialize global variables.
+              var edges;
+              var nodes;
+              var allNodes;
+              var allEdges;
+              var nodeColors;
+              var originalNodes;
+              var network;
+              var container;
+              var options, data;
+              var filter = {
+                  item : '',
+                  property : '',
+                  value : []
+              };
+
+              
+
+              
+
+              // This method is responsible for drawing the graph, returns the drawn network
+              function drawGraph() {
+                  var container = document.getElementById('mynetwork');
+
+                  
+
+                  // parsing and collecting nodes and edges from the python
+                  nodes = new vis.DataSet([{"borderWidth": 3, "color": {"background": "#798500", "border": "#000000", "highlight": {"background": "#798500", "border": "#ffffff"}}, "font": {"color": "white"}, "id": 0, "label": "0", "shape": "dot", "size": 10, "title": "Card: 0\u003cbr\u003eScore: 45.00\u003cbr\u003eFraud: Yes \u2717\u003cbr\u003eTree degree: 1"}, {"borderWidth": 3, "color": {"background": "#8c7200", "border": "#000000", "highlight": {"background": "#8c7200", "border": "#ffffff"}}, "font": {"color": "white"}, "id": 1, "label": "1", "shape": "dot", "size": 24, "title": "Card: 1\u003cbr\u003eScore: 40.00\u003cbr\u003eFraud: Yes \u2717\u003cbr\u003eTree degree: 3"}, {"borderWidth": 3, "color": {"background": "#798500", "border": "#000000", "highlight": {"background": "#798500", "border": "#ffffff"}}, "font": {"color": "white"}, "id": 2, "label": "2", "shape": "dot", "size": 10, "title": "Card: 2\u003cbr\u003eScore: 45.00\u003cbr\u003eFraud: Yes \u2717\u003cbr\u003eTree degree: 1"}, {"borderWidth": 3, "color": {"background": "#8c7200", "border": "#000000", "highlight": {"background": "#8c7200", "border": "#ffffff"}}, "font": {"color": "white"}, "id": 3, "label": "3", "shape": "dot", "size": 10, "title": "Card: 3\u003cbr\u003eScore: 40.00\u003cbr\u003eFraud: Yes \u2717\u003cbr\u003eTree degree: 1"}, {"borderWidth": 3, "color": {"background": "#ff0000", "border": "#000000", "highlight": {"background": "#ff0000", "border": "#ffffff"}}, "font": {"color": "white"}, "id": 4, "label": "4", "shape": "dot", "size": 40, "title": "Card: 4\u003cbr\u003eScore: 10.00\u003cbr\u003eFraud: Yes \u2717\u003cbr\u003eTree degree: 5"}, {"borderWidth": 3, "color": {"background": "#9f5f00", "border": "#000000", "highlight": {"background": "#9f5f00", "border": "#ffffff"}}, "font": {"color": "white"}, "id": 5, "label": "5", "shape": "dot", "size": 10, "title": "Card: 5\u003cbr\u003eScore: 35.00\u003cbr\u003eFraud: Yes \u2717\u003cbr\u003eTree degree: 1"}, {"borderWidth": 3, "color": {"background": "#817d00", "border": "#000000", "highlight": {"background": "#817d00", "border": "#ffffff"}}, "font": {"color": "white"}, "id": 6, "label": "6", "shape": "dot", "size": 10, "title": "Card: 6\u003cbr\u003eScore: 43.00\u003cbr\u003eFraud: Yes \u2717\u003cbr\u003eTree degree: 1"}, {"borderWidth": 1, "color": {"background": "#6a9400", "border": "#6a9400", "highlight": {"background": "#6a9400", "border": "#ffffff"}}, "font": {"color": "white"}, "id": 7, "label": "7", "shape": "dot", "size": 10, "title": "Card: 7\u003cbr\u003eScore: 49.00\u003cbr\u003eFraud: No\u003cbr\u003eTree degree: 1"}, {"borderWidth": 1, "color": {"background": "#6a9400", "border": "#6a9400", "highlight": {"background": "#6a9400", "border": "#ffffff"}}, "font": {"color": "white"}, "id": 8, "label": "8", "shape": "dot", "size": 16, "title": "Card: 8\u003cbr\u003eScore: 49.00\u003cbr\u003eFraud: No\u003cbr\u003eTree degree: 2"}, {"borderWidth": 1, "color": {"background": "#48b600", "border": "#48b600", "highlight": {"background": "#48b600", "border": "#ffffff"}}, "font": {"color": "white"}, "id": 9, "label": "9", "shape": "dot", "size": 16, "title": "Card: 9\u003cbr\u003eScore: 58.00\u003cbr\u003eFraud: No\u003cbr\u003eTree degree: 2"}, {"borderWidth": 1, "color": {"background": "#817d00", "border": "#817d00", "highlight": {"background": "#817d00", "border": "#ffffff"}}, "font": {"color": "white"}, "id": 10, "label": "10", "shape": "dot", "size": 24, "title": "Card: 10\u003cbr\u003eScore: 43.00\u003cbr\u003eFraud: No\u003cbr\u003eTree degree: 3"}, {"borderWidth": 1, "color": {"background": "#817d00", "border": "#817d00", "highlight": {"background": "#817d00", "border": "#ffffff"}}, "font": {"color": "white"}, "id": 11, "label": "11", "shape": "dot", "size": 10, "title": "Card: 11\u003cbr\u003eScore: 43.00\u003cbr\u003eFraud: No\u003cbr\u003eTree degree: 1"}, {"borderWidth": 1, "color": {"background": "#ab5300", "border": "#ab5300", "highlight": {"background": "#ab5300", "border": "#ffffff"}}, "font": {"color": "white"}, "id": 12, "label": "12", "shape": "dot", "size": 64, "title": "Card: 12\u003cbr\u003eScore: 32.00\u003cbr\u003eFraud: No\u003cbr\u003eTree degree: 8"}, {"borderWidth": 1, "color": {"background": "#4faf00", "border": "#4faf00", "highlight": {"background": "#4faf00", "border": "#ffffff"}}, "font": {"color": "white"}, "id": 13, "label": "13", "shape": "dot", "size": 10, "title": "Card: 13\u003cbr\u003eScore: 56.00\u003cbr\u003eFraud: No\u003cbr\u003eTree degree: 1"}, {"borderWidth": 1, "color": {"background": "#53ab00", "border": "#53ab00", "highlight": {"background": "#53ab00", "border": "#ffffff"}}, "font": {"color": "white"}, "id": 14, "label": "14", "shape": "dot", "size": 10, "title": "Card: 14\u003cbr\u003eScore: 55.00\u003cbr\u003eFraud: No\u003cbr\u003eTree degree: 1"}, {"borderWidth": 1, "color": {"background": "#817d00", "border": "#817d00", "highlight": {"background": "#817d00", "border": "#ffffff"}}, "font": {"color": "white"}, "id": 15, "label": "15", "shape": "dot", "size": 10, "title": "Card: 15\u003cbr\u003eScore: 43.00\u003cbr\u003eFraud: No\u003cbr\u003eTree degree: 1"}, {"borderWidth": 1, "color": {"background": "#ab5300", "border": "#ab5300", "highlight": {"background": "#ab5300", "border": "#ffffff"}}, "font": {"color": "white"}, "id": 16, "label": "16", "shape": "dot", "size": 10, "title": "Card: 16\u003cbr\u003eScore: 32.00\u003cbr\u003eFraud: No\u003cbr\u003eTree degree: 1"}, {"borderWidth": 1, "color": {"background": "#6e9000", "border": "#6e9000", "highlight": {"background": "#6e9000", "border": "#ffffff"}}, "font": {"color": "white"}, "id": 17, "label": "17", "shape": "dot", "size": 10, "title": "Card: 17\u003cbr\u003eScore: 48.00\u003cbr\u003eFraud: No\u003cbr\u003eTree degree: 1"}, {"borderWidth": 1, "color": {"background": "#629c00", "border": "#629c00", "highlight": {"background": "#629c00", "border": "#ffffff"}}, "font": {"color": "white"}, "id": 18, "label": "18", "shape": "dot", "size": 10, "title": "Card: 18\u003cbr\u003eScore: 51.00\u003cbr\u003eFraud: No\u003cbr\u003eTree degree: 1"}, {"borderWidth": 1, "color": {"background": "#ff0000", "border": "#ff0000", "highlight": {"background": "#ff0000", "border": "#ffffff"}}, "font": {"color": "white"}, "id": 19, "label": "19", "shape": "dot", "size": 96, "title": "Card: 19\u003cbr\u003eScore: 10.00\u003cbr\u003eFraud: No\u003cbr\u003eTree degree: 12"}, {"borderWidth": 1, "color": {"background": "#48b600", "border": "#48b600", "highlight": {"background": "#48b600", "border": "#ffffff"}}, "font": {"color": "white"}, "id": 20, "label": "20", "shape": "dot", "size": 10, "title": "Card: 20\u003cbr\u003eScore: 58.00\u003cbr\u003eFraud: No\u003cbr\u003eTree degree: 1"}, {"borderWidth": 1, "color": {"background": "#817d00", "border": "#817d00", "highlight": {"background": "#817d00", "border": "#ffffff"}}, "font": {"color": "white"}, "id": 21, "label": "21", "shape": "dot", "size": 10, "title": "Card: 21\u003cbr\u003eScore: 43.00\u003cbr\u003eFraud: No\u003cbr\u003eTree degree: 1"}, {"borderWidth": 1, "color": {"background": "#9f5f00", "border": "#9f5f00", "highlight": {"background": "#9f5f00", "border": "#ffffff"}}, "font": {"color": "white"}, "id": 22, "label": "22", "shape": "dot", "size": 10, "title": "Card: 22\u003cbr\u003eScore: 35.00\u003cbr\u003eFraud: No\u003cbr\u003eTree degree: 1"}, {"borderWidth": 1, "color": {"background": "#40be00", "border": "#40be00", "highlight": {"background": "#40be00", "border": "#ffffff"}}, "font": {"color": "white"}, "id": 23, "label": "23", "shape": "dot", "size": 10, "title": "Card: 23\u003cbr\u003eScore: 60.00\u003cbr\u003eFraud: No\u003cbr\u003eTree degree: 1"}, {"borderWidth": 1, "color": {"background": "#00ff00", "border": "#00ff00", "highlight": {"background": "#00ff00", "border": "#ffffff"}}, "font": {"color": "white"}, "id": 24, "label": "24", "shape": "dot", "size": 10, "title": "Card: 24\u003cbr\u003eScore: 77.00\u003cbr\u003eFraud: No\u003cbr\u003eTree degree: 1"}, {"borderWidth": 1, "color": {"background": "#6e9000", "border": "#6e9000", "highlight": {"background": "#6e9000", "border": "#ffffff"}}, "font": {"color": "white"}, "id": 25, "label": "25", "shape": "dot", "size": 10, "title": "Card: 25\u003cbr\u003eScore: 48.00\u003cbr\u003eFraud: No\u003cbr\u003eTree degree: 1"}, {"borderWidth": 1, "color": {"background": "#897500", "border": "#897500", "highlight": {"background": "#897500", "border": "#ffffff"}}, "font": {"color": "white"}, "id": 26, "label": "26", "shape": "dot", "size": 10, "title": "Card: 26\u003cbr\u003eScore: 41.00\u003cbr\u003eFraud: No\u003cbr\u003eTree degree: 1"}, {"borderWidth": 1, "color": {"background": "#13eb00", "border": "#13eb00", "highlight": {"background": "#13eb00", "border": "#ffffff"}}, "font": {"color": "white"}, "id": 27, "label": "27", "shape": "dot", "size": 10, "title": "Card: 27\u003cbr\u003eScore: 72.00\u003cbr\u003eFraud: No\u003cbr\u003eTree degree: 1"}, {"borderWidth": 1, "color": {"background": "#40be00", "border": "#40be00", "highlight": {"background": "#40be00", "border": "#ffffff"}}, "font": {"color": "white"}, "id": 28, "label": "28", "shape": "dot", "size": 10, "title": "Card: 28\u003cbr\u003eScore: 60.00\u003cbr\u003eFraud: No\u003cbr\u003eTree degree: 1"}, {"borderWidth": 1, "color": {"background": "#31cd00", "border": "#31cd00", "highlight": {"background": "#31cd00", "border": "#ffffff"}}, "font": {"color": "white"}, "id": 29, "label": "29", "shape": "dot", "size": 10, "title": "Card: 29\u003cbr\u003eScore: 64.00\u003cbr\u003eFraud: No\u003cbr\u003eTree degree: 1"}]);
+                  edges = new vis.DataSet([{"color": {"color": "#888888", "highlight": "#ffffff"}, "from": 1, "title": "min-cut: 48.0", "to": 4, "value": 48.0}, {"color": {"color": "#888888", "highlight": "#ffffff"}, "from": 2, "title": "min-cut: 45.0", "to": 1, "value": 45.0}, {"color": {"color": "#888888", "highlight": "#ffffff"}, "from": 3, "title": "min-cut: 40.0", "to": 1, "value": 40.0}, {"color": {"color": "#888888", "highlight": "#ffffff"}, "from": 4, "title": "min-cut: 45.0", "to": 0, "value": 45.0}, {"color": {"color": "#888888", "highlight": "#ffffff"}, "from": 5, "title": "min-cut: 35.0", "to": 4, "value": 35.0}, {"color": {"color": "#888888", "highlight": "#ffffff"}, "from": 6, "title": "min-cut: 43.0", "to": 4, "value": 43.0}, {"color": {"color": "#888888", "highlight": "#ffffff"}, "from": 7, "title": "min-cut: 49.0", "to": 8, "value": 49.0}, {"color": {"color": "#888888", "highlight": "#ffffff"}, "from": 8, "title": "min-cut: 58.0", "to": 9, "value": 58.0}, {"color": {"color": "#888888", "highlight": "#ffffff"}, "from": 9, "title": "min-cut: 60.0", "to": 10, "value": 60.0}, {"color": {"color": "#888888", "highlight": "#ffffff"}, "from": 10, "title": "min-cut: 62.0", "to": 12, "value": 62.0}, {"color": {"color": "#888888", "highlight": "#ffffff"}, "from": 11, "title": "min-cut: 43.0", "to": 10, "value": 43.0}, {"color": {"color": "#888888", "highlight": "#ffffff"}, "from": 12, "title": "min-cut: 65.0", "to": 19, "value": 65.0}, {"color": {"color": "#888888", "highlight": "#ffffff"}, "from": 13, "title": "min-cut: 56.0", "to": 12, "value": 56.0}, {"color": {"color": "#888888", "highlight": "#ffffff"}, "from": 14, "title": "min-cut: 55.0", "to": 12, "value": 55.0}, {"color": {"color": "#888888", "highlight": "#ffffff"}, "from": 15, "title": "min-cut: 43.0", "to": 12, "value": 43.0}, {"color": {"color": "#888888", "highlight": "#ffffff"}, "from": 16, "title": "min-cut: 32.0", "to": 12, "value": 32.0}, {"color": {"color": "#888888", "highlight": "#ffffff"}, "from": 17, "title": "min-cut: 48.0", "to": 12, "value": 48.0}, {"color": {"color": "#888888", "highlight": "#ffffff"}, "from": 18, "title": "min-cut: 51.0", "to": 12, "value": 51.0}, {"color": {"color": "#888888", "highlight": "#ffffff"}, "from": 19, "title": "min-cut: 10.0", "to": 4, "value": 10.0}, {"color": {"color": "#888888", "highlight": "#ffffff"}, "from": 20, "title": "min-cut: 58.0", "to": 19, "value": 58.0}, {"color": {"color": "#888888", "highlight": "#ffffff"}, "from": 21, "title": "min-cut: 43.0", "to": 19, "value": 43.0}, {"color": {"color": "#888888", "highlight": "#ffffff"}, "from": 22, "title": "min-cut: 35.0", "to": 19, "value": 35.0}, {"color": {"color": "#888888", "highlight": "#ffffff"}, "from": 23, "title": "min-cut: 60.0", "to": 19, "value": 60.0}, {"color": {"color": "#888888", "highlight": "#ffffff"}, "from": 24, "title": "min-cut: 77.0", "to": 19, "value": 77.0}, {"color": {"color": "#888888", "highlight": "#ffffff"}, "from": 25, "title": "min-cut: 48.0", "to": 19, "value": 48.0}, {"color": {"color": "#888888", "highlight": "#ffffff"}, "from": 26, "title": "min-cut: 41.0", "to": 19, "value": 41.0}, {"color": {"color": "#888888", "highlight": "#ffffff"}, "from": 27, "title": "min-cut: 72.0", "to": 19, "value": 72.0}, {"color": {"color": "#888888", "highlight": "#ffffff"}, "from": 28, "title": "min-cut: 60.0", "to": 19, "value": 60.0}, {"color": {"color": "#888888", "highlight": "#ffffff"}, "from": 29, "title": "min-cut: 64.0", "to": 19, "value": 64.0}]);
+
+                  nodeColors = {};
+                  allNodes = nodes.get({ returnType: "Object" });
+                  for (nodeId in allNodes) {
+                    nodeColors[nodeId] = allNodes[nodeId].color;
+                  }
+                  allEdges = edges.get({ returnType: "Object" });
+                  // adding nodes and edges to the graph
+                  data = {nodes: nodes, edges: edges};
+
+                  var options = {
+    "configure": {
+        "enabled": false
+    },
+    "edges": {
+        "color": {
+            "inherit": true
+        },
+        "smooth": {
+            "enabled": true,
+            "type": "dynamic"
+        }
+    },
+    "interaction": {
+        "dragNodes": true,
+        "hideEdgesOnDrag": false,
+        "hideNodesOnDrag": false
+    },
+    "physics": {
+        "barnesHut": {
+            "avoidOverlap": 0,
+            "centralGravity": 0.3,
+            "damping": 0.09,
+            "gravitationalConstant": -80000,
+            "springConstant": 0.001,
+            "springLength": 250
+        },
+        "enabled": true,
+        "stabilization": {
+            "enabled": true,
+            "fit": true,
+            "iterations": 1000,
+            "onlyDynamicEdges": false,
+            "updateInterval": 50
+        }
+    }
+};
+
+                  
+
+
+                  
+
+                  network = new vis.Network(container, data, options);
+
+                  
+
+                  
+
+                  
+
+
+                  
+
+                  return network;
+
+              }
+              drawGraph();
+        </script>
+    </body>
+</html>
